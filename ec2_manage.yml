@@ -1,0 +1,33 @@
+---
+- name: Manage EC2 instances based on tags
+  hosts: all
+  gather_facts: yes
+  tasks:
+    - name: Check if the instance is managed
+      when: "'Managed' in ec2_tags and ec2_tags['Managed'] == 'true'"
+      block:
+        - name: Update hostname based on the Name tag
+          hostname:
+            name: "{{ ec2_tags['Name'] }}"
+          
+        - name: Install the service
+          apt:
+            name: "{{ ec2_tags['Service'] }}"
+            state: present
+
+        - name: Ensure the version of the service
+          command: |
+            if dpkg -l | grep -q "{{ ec2_tags['Service'] }}"; then
+              echo "Service is installed"
+            else
+              echo "Installing the service"
+            fi
+          # Add logic here to handle versioning if needed
+
+        - name: Create a crontab entry for restart
+          cron:
+            name: "Restart server"
+            minute: "{{ (ec2_tags['Restart'] | split(' at ')[1] | split(':')[0]) | default('0') }}"
+            hour: "{{ (ec2_tags['Restart'] | split(' at ')[1] | split(':')[1]) | default('0') }}"
+            day: "{{ (ec2_tags['Restart'] | split(' at ')[0]) | default('*') }}"
+            job: "/sbin/shutdown -r now"

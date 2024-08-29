@@ -1,0 +1,6 @@
+[ec2_instances]
+44.210.111.116
+44.207.6.157
+
+[ec2_instances:vars]
+ansible_user=ubuntu
